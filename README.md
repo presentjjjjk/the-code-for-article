@@ -1,6 +1,6 @@
 # Manual
 
-This repository stores the supporting code for the paper titled 'Highly generalizable model with cascaded feature engineering: toward small datasets.
+This repository stores the supporting code for the paper titled "Highly generalizable model with cascaded feature engineering: toward small datasets".
 
 The deep learning framework we use is tensorflow_gpu 2.10.0 under Windows system,and we used Nvidia RTX4070 graphics card for training.If you want to run the above code on your machine, please note that the results may vary slightly depending on the hardware.
 
