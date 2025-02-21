@@ -302,24 +302,47 @@ X_all_scaled = best_scaler.transform(X)
 final_predictions = best_model.predict(X_all_scaled).flatten()
 final_actuals = y.values
 
-# Visualize the predicted vs actual values for the entire dataset
+# Calculate absolute errors
+abs_errors = np.abs(final_predictions - final_actuals)
+
+# Visualize the comparison between predicted and actual values
 plt.figure(figsize=(8, 6))
-# Plot the actual vs predicted values with customized appearance
-plt.scatter(final_actuals, final_predictions, alpha=0.7, color='dodgerblue', edgecolors='black', s=50)
 
-# Add the perfect prediction line
-plt.plot([200, 600], [200, 600], 'r-', linewidth=3, label="Ideal Prediction Line")
+# Set chart style
+plt.style.use('default')  # Switch to default style
 
-# Add labels, title, and grid
-plt.xlabel('Actual Boiling Point (K)', fontsize=12)
-plt.ylabel('Predicted Boiling Point (K)', fontsize=12)
-plt.title('Neural Networks Model Prediction vs Actual Boiling Points(Entire Dataset)', fontsize=14)
-plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+# Create gradient scatter plot
+scatter = plt.scatter(final_actuals, final_predictions, 
+                     alpha=0.8,                          
+                     s=30,                              
+                     c=abs_errors,                   # Change to absolute errors
+                     cmap='ocean',                    
+                     edgecolor='white',                 
+                     linewidth=0.5)                     
 
-# Set axis ticks for better readability
-plt.xticks(np.arange(final_actuals.min(), final_actuals.max() + 50, step=50), fontsize=10)
-plt.yticks(np.arange(final_predictions.min(), final_predictions.max() + 50, step=50), fontsize=10)
+# Add ideal prediction line
+min_val = min(final_actuals.min(), final_predictions.min())
+max_val = max(final_actuals.max(), final_predictions.max())
+plt.plot([min_val, max_val], [min_val, max_val], 
+         color='#FF6B6B',                              
+         linestyle='-',                               
+         linewidth=1.5,                                
+         label="ideal line")
 
+# Optimize labels and title
+plt.xlabel('Actual Boiling Point (K)', fontsize=12, fontweight='bold')
+plt.ylabel('Predicted Boiling Point (K)', fontsize=12, fontweight='bold')
+plt.title('Neural Networks Model Prediction vs Actual Boiling Points(Entire Dataset)', fontsize=14, pad=15)
+
+# Add colorbar
+cbar = plt.colorbar(scatter)
+cbar.set_label('Absolute Error (K)', fontsize=10)  # Changed label
+
+# Optimize grid lines
+plt.grid(True, linestyle='--', alpha=0.3)
+
+# Adjust margins
+plt.tight_layout()
 # Add the legend and save the plot
 plt.legend(loc='upper left')
 plt.savefig('Actual_vs_Predicted_Boiling_Points_Enhanced.png', dpi=300, bbox_inches='tight')

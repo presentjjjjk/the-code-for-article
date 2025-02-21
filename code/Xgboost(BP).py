@@ -104,9 +104,6 @@ rmse_scores = []
 max_error_scores = []
 mre_scores = []
 
-# Store feature importance
-feature_importance_scores = []
-
 # XGBoost parameters configuration
 xgb_params = {
     'objective': 'reg:squarederror',
@@ -139,7 +136,7 @@ for fold, (train_index, test_index) in enumerate(kf.split(X)):
     # Initialize model
     model = XGBRegressor(
         objective='reg:squarederror',
-        n_estimators=2000,
+        n_estimators=1000,
         max_depth=6,
         learning_rate=0.01,
         subsample=0.8,
@@ -173,8 +170,6 @@ for fold, (train_index, test_index) in enumerate(kf.split(X)):
     max_error_scores.append(max_error)
     mre_scores.append(mre)
     
-    # Collect feature importance
-    feature_importance_scores.append(model.feature_importances_)
     
     # Save the best model
     if r2 > best_r2:
@@ -189,47 +184,6 @@ print(f"Average MAE: {np.mean(mae_scores):.4f} ± {np.std(mae_scores):.4f}")
 print(f"Average RMSE: {np.mean(rmse_scores):.4f} ± {np.std(rmse_scores):.4f}")
 print(f"Average Max Error: {np.mean(max_error_scores):.4f} ± {np.std(max_error_scores):.4f}")
 print(f"Average MRE: {np.mean(mre_scores):.2f}% ± {np.std(mre_scores):.2f}%")
-
-# Feature importance analysis
-mean_importance = np.mean(feature_importance_scores, axis=0)
-std_importance = np.std(feature_importance_scores, axis=0)
-feature_importance_df = pd.DataFrame({
-    'Feature': X.columns,
-    'Importance': mean_importance,
-    'Std': std_importance
-}).sort_values('Importance', ascending=False)
-
-import seaborn as sns
-
-
-sns.set(style="whitegrid")
-
-plt.figure(figsize=(12, 6))
-
-# Use gradient colors
-cmap = plt.cm.Blues
-colors = [cmap(i / 10) for i in range(10)]  # Only need 10 colors
-
-bars = plt.barh(range(10), feature_importance_df['Importance'].values[:10], 
-                xerr=feature_importance_df['Std'].values[:10], align='center',
-                color=colors, edgecolor='black', ecolor='gray', capsize=5, error_kw={'elinewidth':1.5})
-
-plt.gca().invert_yaxis()
-plt.yticks(range(10), feature_importance_df['Feature'].values[:10], fontsize=10)
-plt.xlabel('Feature Importance Score', fontsize=12)
-plt.title('Top 10 Feature Importance with Standard Deviation', fontsize=14)
-
-# Add value labels with offset
-for i, bar in enumerate(bars):
-    # Increase offset to ensure value labels don't overlap with error bars
-    offset = bar.get_width() * 0.1  # Dynamically adjust offset based on bar width
-    plt.text(bar.get_width() + offset, bar.get_y() + bar.get_height() / 2, 
-             f'{bar.get_width():.2f}', va='center', fontsize=20, color='black')
-
-plt.grid(axis='x', linestyle='--', alpha=0.7)
-plt.tight_layout()
-plt.savefig('xgboost_feature_importance_top10.png', dpi=300)
-plt.show()
 
 # New: Plot training curves for the best model
 if best_evals_result is not None:
@@ -259,6 +213,7 @@ if best_evals_result is not None:
     plt.show()
 else:
     print("No training curves available.")
+
 
 
 

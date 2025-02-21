@@ -413,26 +413,48 @@ boiling_predictions, critical_predictions = best_model.predict(X_all_scaled)
 final_predictions = critical_predictions.flatten()
 final_actuals = y_critical.values.flatten()
 
-# Visualize predictions and actual values for entire dataset
+# Calculate absolute errors
+abs_errors = np.abs(final_predictions - final_actuals)
+
+# Visualize the comparison between predicted and actual values
 plt.figure(figsize=(8, 6))
-# Plot scatter plot of actual vs predicted values
-plt.scatter(final_actuals, final_predictions, alpha=0.7, color='dodgerblue', edgecolors='black', s=50)
+
+# Set chart style
+plt.style.use('default')  # Switch to default style
+
+# Create gradient scatter plot
+scatter = plt.scatter(final_actuals, final_predictions, 
+                     alpha=0.8,                          
+                     s=30,                              
+                     c=abs_errors,                   # Change to absolute errors
+                     cmap='ocean',                    
+                     edgecolor='white',                 
+                     linewidth=0.5)                     
 
 # Add ideal prediction line
-plt.plot([300, 900], [300, 900], 'r-', linewidth=3, label="Ideal Prediction Line")
+min_val = min(final_actuals.min(), final_predictions.min())
+max_val = max(final_actuals.max(), final_predictions.max())
+plt.plot([min_val, max_val], [min_val, max_val], 
+         color='#FF6B6B',                              
+         linestyle='-',                               
+         linewidth=1.5,                                
+         label="ideal line")
 
-# Add labels, title and grid
-plt.xlabel('Actual Tc (K)', fontsize=12)
-plt.ylabel('Predicted Tc (K)', fontsize=12)
-plt.title('Compartment Model Prediction vs Actual Tc (Entire Dataset)', fontsize=14)
-plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+# Optimize labels and title
+plt.xlabel('Actual Tc (K)', fontsize=12, fontweight='bold')
+plt.ylabel('Predicted Tc (K)', fontsize=12, fontweight='bold')
+plt.title('Neural Networks Model Prediction vs Actual Tc(Entire Dataset)', fontsize=14, pad=15)
 
-# Set axis tick marks
-plt.xticks(np.arange(final_actuals.min(), final_actuals.max() + 50, step=50), fontsize=10)
-plt.yticks(np.arange(final_predictions.min(), final_predictions.max() + 50, step=50), fontsize=10)
+# Add colorbar
+cbar = plt.colorbar(scatter)
+cbar.set_label('Absolute Error (K)', fontsize=10)  # Changed label
 
-# Add legend and save image
+# Optimize grid lines
+plt.grid(True, linestyle='--', alpha=0.3)
+
+# Adjust margins
+plt.tight_layout()
+# Add the legend and save the plot
 plt.legend(loc='upper left')
-plt.savefig('Actual_vs_Predicted_Tc.png', dpi=300, bbox_inches='tight')
+plt.savefig('Actual_vs_Predicted_Tc_Enhanced.png', dpi=300, bbox_inches='tight')
 plt.show()
-

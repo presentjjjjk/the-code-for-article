@@ -105,9 +105,6 @@ rmse_scores = []
 max_error_scores = []
 mre_scores = []
 
-# Store feature importance
-feature_importance_scores = []
-
 # XGBoost parameters configuration
 xgb_params = {
     'objective': 'reg:squarederror',
@@ -231,10 +228,7 @@ for fold, (train_index, test_index) in enumerate(kf.split(X)):
     rmse_scores.append(rmse)
     max_error_scores.append(max_error)
     mre_scores.append(mre)
-    
-    # Collect feature importance
-    feature_importance_scores.append(model.feature_importances_)
-    
+        
     # Save best model
     if r2 > best_r2:
         best_r2 = r2
@@ -255,72 +249,54 @@ print(f"Average RMSE: {np.mean(rmse_scores):.4f} ± {np.std(rmse_scores):.4f}")
 print(f"Average Max Error: {np.mean(max_error_scores):.4f} ± {np.std(max_error_scores):.4f}")
 print(f"Average MRE: {np.mean(mre_scores):.2f}% ± {np.std(mre_scores):.2f}%")
 
-# Feature importance analysis
-mean_importance = np.mean(feature_importance_scores, axis=0)
-std_importance = np.std(feature_importance_scores, axis=0)
-feature_importance_df = pd.DataFrame({
-    'Feature': X.columns,
-    'Importance': mean_importance,
-    'Std': std_importance
-}).sort_values('Importance', ascending=False)
-
 # Use the best model to predict on the entire dataset
 final_predictions = best_model.predict(X).flatten()
 final_actuals = y.values
 
-# Visualize the predicted vs actual values for the entire dataset
+# Visualize the comparison between predicted and actual values
 plt.figure(figsize=(8, 6))
-# Plot the actual vs predicted values with customized appearance
-plt.scatter(final_actuals, final_predictions, alpha=0.7, color='dodgerblue', edgecolors='black', s=50)
 
-# Add the perfect prediction line
-plt.plot([10, 130], [10, 130], 'r-', linewidth=3, label="Ideal Prediction Line")
+# Set chart style
+plt.style.use('default')  # Switch to default style
 
-# Add labels, title, and grid
-plt.xlabel('Actual Vc (cm^3/mol)', fontsize=12)
-plt.ylabel('Predicted Vc (cm^3/mol)', fontsize=12)
-plt.title('XGBoost Prediction vs Actual Vc(Entire Dataset)', fontsize=14)
-plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+# Calculate absolute errors
+abs_errors = np.abs(final_predictions - final_actuals)
 
-# Set axis ticks for better readability
-plt.xticks(np.arange(final_actuals.min(), final_actuals.max() + 30, step=50), fontsize=10)
-plt.yticks(np.arange(final_predictions.min(), final_predictions.max() + 30, step=50), fontsize=10)
+# Create gradient scatter plot
+scatter = plt.scatter(final_actuals, final_predictions, 
+                     alpha=0.8,                          
+                     s=30,                              
+                     c=abs_errors,                   # Change to absolute errors
+                     cmap='ocean',                 # Use YlOrRd colormap (yellow to red)
+                     edgecolor='white',                 
+                     linewidth=0.5)                     
 
+# Add ideal prediction line
+min_val = min(final_actuals.min(), final_predictions.min())
+max_val = max(final_actuals.max(), final_predictions.max())
+plt.plot([min_val, max_val], [min_val, max_val], 
+         color='#4169E1',                              # Changed to royal blue
+         linestyle='-',                               
+         linewidth=1.5,                                
+         label="ideal line")
+
+# Optimize labels and title
+plt.xlabel('Actual Vc (cm^3/mol)', fontsize=12, fontweight='bold')
+plt.ylabel('Predicted Vc (cm^3/mol)', fontsize=12, fontweight='bold')
+plt.title('Xgboost Model Prediction vs Actual Vc(Entire Dataset)', fontsize=14, pad=15)
+
+# Add colorbar
+cbar = plt.colorbar(scatter)
+cbar.set_label('Absolute Error (cm^3/mol)', fontsize=10)  # Changed label
+
+# Optimize grid lines
+plt.grid(True, linestyle='--', alpha=0.3)
+
+# Adjust margins
+plt.tight_layout()
 # Add the legend and save the plot
 plt.legend(loc='upper left')
 plt.savefig('Actual_vs_Predicted_Vc_Enhanced.png', dpi=300, bbox_inches='tight')
-plt.show()
-
-import seaborn as sns
-
-
-sns.set(style="whitegrid")
-
-plt.figure(figsize=(12, 6))
-
-# Use gradient colors
-cmap = plt.cm.Reds
-colors = [cmap(i / 10) for i in range(10)]  # Only need 10 colors
-
-bars = plt.barh(range(10), feature_importance_df['Importance'].values[:10], 
-                xerr=feature_importance_df['Std'].values[:10], align='center',
-                color=colors, edgecolor='black', ecolor='gray', capsize=5, error_kw={'elinewidth':1.5})
-
-plt.gca().invert_yaxis()
-plt.yticks(range(10), feature_importance_df['Feature'].values[:10], fontsize=10)
-plt.xlabel('Feature Importance Score', fontsize=12)
-plt.title('Top 10 Feature Importance with Standard Deviation', fontsize=14)
-
-# Add numerical annotations, with offset
-for i, bar in enumerate(bars):
-    # Add offset, ensuring numerical annotations do not overlap with error bars
-    offset = bar.get_width() * 0.1  # Dynamically adjust offset based on bar width
-    plt.text(bar.get_width() + offset, bar.get_y() + bar.get_height() / 2, 
-             f'{bar.get_width():.2f}', va='center', fontsize=20, color='black')
-
-plt.grid(axis='x', linestyle='--', alpha=0.7)
-plt.tight_layout()
-plt.savefig('xgboost_feature_importance_top10(Vc).png', dpi=300)
 plt.show()
 
 # New: Plot training curve for the best model

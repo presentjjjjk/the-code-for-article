@@ -102,9 +102,6 @@ rmse_scores = []
 max_error_scores = []
 mre_scores = []
 
-# Store feature importance
-feature_importance_scores = []
-
 # XGBoost parameters configuration
 xgb_params = {
     'objective': 'reg:squarederror',
@@ -171,8 +168,6 @@ for fold, (train_index, test_index) in enumerate(kf.split(X)):
     max_error_scores.append(max_error)
     mre_scores.append(mre)
     
-    # Collect feature importance
-    feature_importance_scores.append(model.feature_importances_)
     
     # Save best model
     if r2 > best_r2:
@@ -187,15 +182,6 @@ print(f"Average MAE: {np.mean(mae_scores):.4f} ± {np.std(mae_scores):.4f}")
 print(f"Average RMSE: {np.mean(rmse_scores):.4f} ± {np.std(rmse_scores):.4f}")
 print(f"Average Max Error: {np.mean(max_error_scores):.4f} ± {np.std(max_error_scores):.4f}")
 print(f"Average MRE: {np.mean(mre_scores):.2f}% ± {np.std(mre_scores):.2f}%")
-
-# Feature importance analysis
-mean_importance = np.mean(feature_importance_scores, axis=0)
-std_importance = np.std(feature_importance_scores, axis=0)
-feature_importance_df = pd.DataFrame({
-    'Feature': X.columns,
-    'Importance': mean_importance,
-    'Std': std_importance
-}).sort_values('Importance', ascending=False)
 
 # Plot best model's training curves
 if best_evals_result is not None:

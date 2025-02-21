@@ -518,72 +518,96 @@ print(f"Average RMSE: {np.mean(rmse_scores):.4f} ± {np.std(rmse_scores):.4f}")
 print(f"Average Max Error: {np.mean(max_error_scores):.4f} ± {np.std(max_error_scores):.4f}")
 print(f"Average Mean Relative Error: {np.mean(mre_scores):.2f}% ± {np.std(mre_scores):.2f}%")
 
-# for i in range(len(fold_histories)):
-#     if fold_histories[i][1]==best_r2:
-#         best_history = fold_histories[i][0]
-#         break
+for i in range(len(fold_histories)):
+    if fold_histories[i][1]==best_r2:
+        best_history = fold_histories[i][0]
+        break
 
-# # Draw the loss curve of the best model
-# plt.figure(figsize=(8, 6))
+import matplotlib.pyplot as plt
 
-# # Get training and validation loss
-# train_loss = best_history.history['loss']
-# val_loss = best_history.history['val_loss']
+# Draw the loss curve of the best model
+plt.figure(figsize=(8, 6))
 
-# # Use log scale
-# plt.yscale('log')
+# Get training and validation loss
+train_loss = best_history.history['loss']
+val_loss = best_history.history['val_loss']
 
-# # Draw the curve
-# plt.plot(train_loss, label='Training Loss')
-# plt.plot(val_loss, label='Development Loss')
+# Use log scale
+plt.yscale('log')
 
-# # Set the range of the Y-axis to avoid extreme values affecting
-# plt.ylim(bottom=min(train_loss + val_loss) * 0.9, top=max(train_loss + val_loss) * 1.1)
+# Draw the curve
+plt.plot(train_loss, label='Training Loss')
+plt.plot(val_loss, label='Development Loss')
 
-# # Add labels, title and legend
-# plt.xlabel('Epochs')
-# plt.ylabel('Loss (MSE, log scale)')
-# plt.title('Best Model - Loss Curve (Log Scale)')
-# plt.legend()
-# plt.grid(True)
+# Set the range of the Y-axis to avoid extreme values affecting
+plt.ylim(bottom=min(train_loss + val_loss) * 0.9, top=max(train_loss + val_loss) * 1.1)
 
-# # Save the image and display
-# plt.savefig('Best_Model_Loss_Curve(H_vap).png', dpi=300, bbox_inches='tight')
-# plt.show()
+# Add labels, title and legend
+plt.xlabel('Epochs')
+plt.ylabel('Loss (MSE, log scale)')
+plt.title('Best Model - Loss Curve (Log Scale)')
+plt.legend()
+plt.grid(True)
 
-# # Load the entire dataset using the best scaler
-# X_0 = X.iloc[:,:-3]
-# X_0_scale = best_scaler.transform(X_0)
-# X_tot_scaled = np.hstack([X_0_scale, X.iloc[:,-3:].values])
+# Save the image and display
+plt.savefig('Best_Model_Loss_Curve(H_vap).png', dpi=300, bbox_inches='tight')
+plt.show()
 
-# # Use the best model to make predictions on the entire dataset
-# H_pre = best_model.predict(X_tot_scaled)
+# Load the entire dataset using the best scaler
+X_0 = X.iloc[:,:-3]
+X_0_scale = best_scaler.transform(X_0)
+X_tot_scaled = np.hstack([X_0_scale, X.iloc[:,-3:].values])
 
-# # Extract the predicted values
-# final_predictions = H_pre.flatten()
-# final_actuals = y.values.flatten()
+# Use the best model to make predictions on the entire dataset
+H_pre = best_model.predict(X_tot_scaled)
 
-# # Visualize the predicted values and actual values of the entire dataset
-# plt.figure(figsize=(8, 6))
-# # Draw a scatter plot of actual values and predicted values
-# plt.scatter(final_actuals, final_predictions, alpha=0.7, color='dodgerblue', edgecolors='black', s=50)
+# Extract the predicted values
+final_predictions = H_pre.flatten()
+final_actuals = y.values.flatten()
 
-# # Add ideal prediction line
-# plt.plot([10000, 90000], [10000, 90000], 'r-', linewidth=3, label="Ideal Prediction Line")
+# Calculate absolute errors
+abs_errors = np.abs(final_predictions - final_actuals)
 
-# # Add labels, title and grid
-# plt.xlabel('Actual Hvap (J/mol)', fontsize=12)
-# plt.ylabel('Predicted Hvap (J/mol)', fontsize=12)
-# plt.title(' Prediction vs Actual Hvap (Entire Dataset)', fontsize=14)
-# plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+# Visualize the comparison between predicted and actual values
+plt.figure(figsize=(8, 6))
 
-# # Set axis scale
-# plt.xticks(np.arange(final_actuals.min()-5000, final_actuals.max() + 5000, step=20000), fontsize=10)
-# plt.yticks(np.arange(final_predictions.min()-5000, final_predictions.max() + 5000, step=20000), fontsize=10)
+# Set chart style
+plt.style.use('default')  # Switch to default style
 
-# # Add legend and save image
-# plt.legend(loc='upper left')
-# plt.show()
-# plt.savefig('Actual_vs_Predicted_H_vap.png', dpi=300, bbox_inches='tight')
+# Create gradient scatter plot
+scatter = plt.scatter(final_actuals, final_predictions, 
+                     alpha=0.8,                          
+                     s=30,                              
+                     c=abs_errors,                   # Change to absolute errors
+                     cmap='ocean',                    
+                     edgecolor='white',                 
+                     linewidth=0.5)                     
 
+# Add ideal prediction line
+min_val = min(final_actuals.min(), final_predictions.min())
+max_val = max(final_actuals.max(), final_predictions.max())
+plt.plot([min_val, max_val], [min_val, max_val], 
+         color='#FF6B6B',                              
+         linestyle='-',                               
+         linewidth=1.5,                                
+         label="ideal line")
+
+# Optimize labels and title
+plt.xlabel('Actual H_vap (J/mol)', fontsize=12, fontweight='bold')
+plt.ylabel('Predicted H_vap (J/mol)', fontsize=12, fontweight='bold')
+plt.title('Neural Networks Model Prediction vs Actual H_vap(Entire Dataset)', fontsize=14, pad=15)
+
+# Add colorbar
+cbar = plt.colorbar(scatter)
+cbar.set_label('Absolute Error (J/mol)', fontsize=10)  # Changed label
+
+# Optimize grid lines
+plt.grid(True, linestyle='--', alpha=0.3)
+
+# Adjust margins
+plt.tight_layout()
+# Add the legend and save the plot
+plt.legend(loc='upper left')
+plt.savefig('Actual_vs_Predicted_H_vap_Enhanced.png', dpi=300, bbox_inches='tight')
+plt.show()
 
